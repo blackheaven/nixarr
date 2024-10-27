@@ -50,6 +50,16 @@ in {
       description = "Open firewall for Sonarr";
     };
 
+    user = mkOption {
+      type = types.str;
+      default = "sonarr";
+    };
+
+    group = mkOption {
+      type = types.str;
+      default = "media";
+    };
+
     vpn.enable = mkOption {
       type = types.bool;
       default = false;
@@ -83,8 +93,8 @@ in {
     services.sonarr = {
       enable = cfg.enable;
       package = cfg.package;
-      user = "sonarr";
-      group = "media";
+      user = cfg.user;
+      group = cfg.group;
       openFirewall = cfg.openFirewall;
       dataDir = cfg.stateDir;
     };

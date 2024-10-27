@@ -46,6 +46,18 @@ in {
       '';
     };
 
+    user = mkOption {
+      type = types.str;
+      default = "prowlarr";
+      description = "User account under which Prowlarr runs.";
+    };
+
+    group = mkOption {
+      type = types.str;
+      default = "prowlarr";
+      description = "Group under which Prowlarr runs.";
+    };
+
     openFirewall = mkOption {
       type = types.bool;
       defaultText = literalExpression ''!nixarr.prowlarr.vpn.enable'';
@@ -87,6 +99,8 @@ in {
     util-nixarr.services.prowlarr = {
       enable = true;
       package = cfg.package;
+      user = cfg.user;
+      group = cfg.group;
       openFirewall = cfg.openFirewall;
       dataDir = cfg.stateDir;
     };

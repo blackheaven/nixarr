@@ -49,6 +49,16 @@ in {
       description = "Open firewall for SABnzbd";
     };
 
+    user = mkOption {
+      type = types.str;
+      default = "usenet";
+    };
+
+    group = mkOption {
+      type = types.str;
+      default = "media";
+    };
+
     whitelistHostnames = mkOption {
       type = types.listOf types.str;
       default = [config.networking.hostName];
@@ -137,7 +147,7 @@ in {
         fi
 
         chmod 600 ${ini-file-target}
-        chown usenet:media ${ini-file-target}
+        chown '${cfg.user}':'${cfg.group}' ${ini-file-target}
       '';
     };
 
@@ -181,25 +191,25 @@ in {
     };
 
     systemd.tmpfiles.rules = [
-      "d '${cfg.stateDir}' 0700 usenet root - -"
+      "d '${cfg.stateDir}' 0700 '${cfg.user}' root - -"
       "C ${cfg.stateDir}/sabnzbd.ini - - - - ${ini-base-config-file}"
 
       # Media dirs
-      "d '${nixarr.mediaDir}/usenet'             0755 usenet media - -"
-      "d '${nixarr.mediaDir}/usenet/.incomplete' 0755 usenet media - -"
-      "d '${nixarr.mediaDir}/usenet/.watch'      0755 usenet media - -"
-      "d '${nixarr.mediaDir}/usenet/manual'      0775 usenet media - -"
-      "d '${nixarr.mediaDir}/usenet/liadarr'     0775 usenet media - -"
-      "d '${nixarr.mediaDir}/usenet/radarr'      0775 usenet media - -"
-      "d '${nixarr.mediaDir}/usenet/sonarr'      0775 usenet media - -"
-      "d '${nixarr.mediaDir}/usenet/readarr'     0775 usenet media - -"
+      "d '${nixarr.mediaDir}/usenet'             0755 '${cfg.user}' '${cfg.group}' - -"
+      "d '${nixarr.mediaDir}/usenet/.incomplete' 0755 '${cfg.user}' '${cfg.group}' - -"
+      "d '${nixarr.mediaDir}/usenet/.watch'      0755 '${cfg.user}' '${cfg.group}' - -"
+      "d '${nixarr.mediaDir}/usenet/manual'      0775 '${cfg.user}' '${cfg.group}' - -"
+      "d '${nixarr.mediaDir}/usenet/liadarr'     0775 '${cfg.user}' '${cfg.group}' - -"
+      "d '${nixarr.mediaDir}/usenet/radarr'      0775 '${cfg.user}' '${cfg.group}' - -"
+      "d '${nixarr.mediaDir}/usenet/sonarr'      0775 '${cfg.user}' '${cfg.group}' - -"
+      "d '${nixarr.mediaDir}/usenet/readarr'     0775 '${cfg.user}' '${cfg.group}' - -"
     ];
 
     services.sabnzbd = {
       enable = true;
       package = cfg.package;
-      user = "usenet";
-      group = "media";
+      user = cfg.user;
+      group = cfg.group;
       configFile = "${cfg.stateDir}/sabnzbd.ini";
     };
 

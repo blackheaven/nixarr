@@ -29,7 +29,7 @@ with lib; let
       text = ''
         touch ${cfg.stateDir}/prowlarr-api-key
         chmod 400 ${cfg.stateDir}/prowlarr-api-key
-        chown torrenter ${cfg.stateDir}/prowlarr-api-key
+        chown '${cfg.user}':'${cfg.group}' ${cfg.stateDir}/prowlarr-api-key
         xq -r '.Config.ApiKey' "${nixarr.prowlarr.stateDir}/config.xml" > "${cfg.stateDir}/prowlarr-api-key"
       '';
     };
@@ -116,6 +116,16 @@ in {
       '';
     };
 
+    user = mkOption {
+      type = types.str;
+      default = "torrenter";
+    };
+
+    group = mkOption {
+      type = types.str;
+      default = "media";
+    };
+
     vpn.enable = mkOption {
       type = types.bool;
       default = false;
@@ -174,6 +184,16 @@ in {
             > 
             > Is not supported, because `/home/user` is owned by `user`.
           '';
+        };
+
+        user = mkOption {
+          type = types.str;
+          default = "torrenter";
+        };
+
+        group = mkOption {
+          type = types.str;
+          default = "cross-seed";
         };
 
         indexIds = mkOption {
@@ -293,31 +313,47 @@ in {
     ];
 
     users = {
-      groups = {
-        torrenter = {};
-        cross-seed = {};
-      };
-      users.torrenter = {
-        isSystemUser = true;
-        group = "torrenter";
-      };
+      users = mkMerge [
+        (mkIf (cfg.user == "transmission") {
+          transmission = {
+            isSystemUser = true;
+            group = cfg.group;
+          };
+        })
+        (mkIf (cfg.user != "transmission" && cfg.privateTrackers.cross-seed.user == "transmission") {
+          transmission = {
+            isSystemUser = true;
+            group = cfg.privateTrackers.cross-seed.group;
+          };
+        })
+      ];
+
+      groups = mkMerge [
+        (mkIf (cfg.group == "torrenter") {
+          torrenter = {};
+        })
+        (mkIf (cfg.privateTrackers.cross-seed.group == "cross-seed") {
+          cross-seed = {};
+        })
+      ];
+
     };
 
     systemd.tmpfiles.rules = [
-      "d '${cfg.stateDir}' 0750 torrenter cross-seed - -"
+      "d '${cfg.stateDir}' 0750 '${cfg.user}' cross-seed - -"
       # This is fixes a bug in nixpks (https://github.com/NixOS/nixpkgs/issues/291883)
-      "d '${cfg.stateDir}/.config' 0750 torrenter cross-seed - -"
-      "d '${cfg.stateDir}/.config/transmission-daemon' 0750 torrenter cross-seed - -"
+      "d '${cfg.stateDir}/.config' 0750 '${cfg.privateTrackers.cross-seed.user}' '${cfg.privateTrackers.cross-seed.group}' - -"
+      "d '${cfg.stateDir}/.config/transmission-daemon' 0750 '${cfg.privateTrackers.cross-seed.user}' '${cfg.privateTrackers.cross-seed.group}' - -"
 
       # Media Dirs
-      "d '${nixarr.mediaDir}/torrents'             0755 torrenter media - -"
-      "d '${nixarr.mediaDir}/torrents/.incomplete' 0755 torrenter media - -"
-      "d '${nixarr.mediaDir}/torrents/.watch'      0755 torrenter media - -"
-      "d '${nixarr.mediaDir}/torrents/manual'      0755 torrenter media - -"
-      "d '${nixarr.mediaDir}/torrents/lidarr'      0755 torrenter media - -"
-      "d '${nixarr.mediaDir}/torrents/radarr'      0755 torrenter media - -"
-      "d '${nixarr.mediaDir}/torrents/sonarr'      0755 torrenter media - -"
-      "d '${nixarr.mediaDir}/torrents/readarr'     0755 torrenter media - -"
+      "d '${nixarr.mediaDir}/torrents'             0755 '${cfg.user}' '${cfg.group}' - -"
+      "d '${nixarr.mediaDir}/torrents/.incomplete' 0755 '${cfg.user}' '${cfg.group}' - -"
+      "d '${nixarr.mediaDir}/torrents/.watch'      0755 '${cfg.user}' '${cfg.group}' - -"
+      "d '${nixarr.mediaDir}/torrents/manual'      0755 '${cfg.user}' '${cfg.group}' - -"
+      "d '${nixarr.mediaDir}/torrents/lidarr'      0755 '${cfg.user}' '${cfg.group}' - -"
+      "d '${nixarr.mediaDir}/torrents/radarr'      0755 '${cfg.user}' '${cfg.group}' - -"
+      "d '${nixarr.mediaDir}/torrents/sonarr'      0755 '${cfg.user}' '${cfg.group}' - -"
+      "d '${nixarr.mediaDir}/torrents/readarr'     0755 '${cfg.user}' '${cfg.group}' - -"
      ];
 
     util-nixarr.services.cross-seed = mkIf cfg-cross-seed.enable {
@@ -361,8 +397,8 @@ in {
 
     services.transmission = {
       enable = true;
-      user = "torrenter";
-      group = "media";
+      user = cfg.user;
+      group = cfg.group;
       home = cfg.stateDir;
       webHome =
         if cfg.flood.enable

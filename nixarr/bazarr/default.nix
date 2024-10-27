@@ -53,6 +53,16 @@ in {
       description = "Open firewall for Bazarr";
     };
 
+    user = mkOption {
+      type = types.str;
+      default = "bazarr";
+    };
+
+    group = mkOption {
+      type = types.str;
+      default = "media";
+    };
+
     vpn.enable = mkOption {
       type = types.bool;
       default = false;
@@ -86,8 +96,8 @@ in {
     util-nixarr.services.bazarr = {
       enable = cfg.enable;
       package = cfg.package;
-      user = "bazarr";
-      group = "media";
+      user = cfg.user;
+      group = cfg.group;
       openFirewall = cfg.openFirewall;
       dataDir = cfg.stateDir;
     };

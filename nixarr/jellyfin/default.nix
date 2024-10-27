@@ -50,6 +50,16 @@ in
         description = "Open firewall for Jellyfin";
       };
 
+      user = mkOption {
+        type = types.str;
+        default = "streamer";
+      };
+
+      group = mkOption {
+        type = types.str;
+        default = "media";
+      };
+
       vpn.enable = mkOption {
         type = types.bool;
         default = false;
@@ -212,14 +222,14 @@ in
         };
 
         systemd.tmpfiles.rules = [
-          "d '${cfg.stateDir}' 0700 streamer root - -"
+          "d '${cfg.stateDir}' 0700 '${cfg.user}' root - -"
 
           # Media Dirs
-          "d '${nixarr.mediaDir}/library'              0775 streamer  media - -"
-          "d '${nixarr.mediaDir}/library/shows'        0775 streamer  media - -"
-          "d '${nixarr.mediaDir}/library/movies'       0775 streamer  media - -"
-          "d '${nixarr.mediaDir}/library/music'        0775 streamer  media - -"
-          "d '${nixarr.mediaDir}/library/books'        0775 streamer  media - -"
+          "d '${nixarr.mediaDir}/library'              0775 '${cfg.user}'  '${cfg.group}' - -"
+          "d '${nixarr.mediaDir}/library/shows'        0775 '${cfg.user}'  '${cfg.group}' - -"
+          "d '${nixarr.mediaDir}/library/movies'       0775 '${cfg.user}'  '${cfg.group}' - -"
+          "d '${nixarr.mediaDir}/library/music'        0775 '${cfg.user}'  '${cfg.group}' - -"
+          "d '${nixarr.mediaDir}/library/books'        0775 '${cfg.user}'  '${cfg.group}' - -"
         ];
 
         # Always prioritise Jellyfin IO
@@ -228,8 +238,8 @@ in
         services.jellyfin = {
           enable = cfg.enable;
           package = cfg.package;
-          user = "streamer";
-          group = "media";
+          user = cfg.user;
+          group = cfg.group;
           openFirewall = cfg.openFirewall;
           logDir = "${cfg.stateDir}/log";
           cacheDir = "${cfg.stateDir}/cache";

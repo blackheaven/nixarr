@@ -50,6 +50,16 @@ in {
       description = "Open firewall for Readarr";
     };
 
+    user = mkOption {
+      type = types.str;
+      default = "readarr";
+    };
+
+    group = mkOption {
+      type = types.str;
+      default = "media";
+    };
+
     vpn.enable = mkOption {
       type = types.bool;
       default = false;
@@ -83,8 +93,8 @@ in {
     services.readarr = {
       enable = cfg.enable;
       package = cfg.package;
-      user = "readarr";
-      group = "media";
+      user = cfg.user;
+      group = cfg.group;
       openFirewall = cfg.openFirewall;
       dataDir = cfg.stateDir;
     };
